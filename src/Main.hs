@@ -70,6 +70,4 @@ runRequest (Options host port count register) = withSocketsDo $ do
       result <- runExceptT $ runSession conn $ readHoldingRegisters (TransactionId 1) (ProtocolId 0) (UnitId 0) (RegAddress register) count
       case result of
         Left err -> putStrLn $ show err
-        Right registers -> do
-          putStrLn "Registers: "
-          mapM_ (putStrLn . show) registers
+        Right registers -> putStrLn . show $ zip [register..] registers
