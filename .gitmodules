@@ -1,0 +1,3 @@
+[submodule "pymodbus"]
+	path = pymodbus
+	url = https://github.com/riptideio/pymodbus.git
