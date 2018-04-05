@@ -2,14 +2,41 @@ module Main where
 
 import Control.Exception (bracket)
 import Control.Monad.Trans.Except
+import Data.Semigroup ((<>))
+import Options.Applicative
 import System.Modbus.TCP
 import Network.Socket hiding (recv, send)
 import Network.Socket.ByteString (recv, send)
 
+
+data Options = Options { optHost :: String
+                       , optPort :: Int
+                       } deriving (Show)
+
+options :: Parser Options
+options = Options
+  <$> strOption ( long "host" <>
+                  short 'h' <>
+                  metavar "HOST" <>
+                  showDefault <>
+                  value "127.0.0.1" <>
+                  help "Hostname or IP address with which to connect." )
+  <*> option auto ( long "port" <>
+                    short 'p' <>
+                    metavar "PORT" <>
+                    showDefault <>
+                    value 502 <>
+                    help "Port number to use." )
+
 main :: IO ()
-main = withSocketsDo $ do
-  -- Default address for pymodbus's asynchronous server example.
-  addr <- resolve "127.0.0.1" "5020"
+main = runRequest =<< execParser opts
+  where opts = info (options <**> helper) (
+          fullDesc <>
+          progDesc "Read some holding registers from the given device." )
+
+runRequest :: Options -> IO ()
+runRequest (Options host port) = withSocketsDo $ do
+  addr <- resolve host (show port)
   bracket (open addr) close go
 
   where
@@ -29,7 +56,7 @@ main = withSocketsDo $ do
                             , connCommandTimeout = 1000
                             , connRetryWhen = \_ _ -> False
                             }
-      result <- runExceptT $ runSession conn $ readHoldingRegisters (TransactionId 1) (ProtocolId 0) (UnitId 0) 1 1
+      result <- runExceptT $ runSession conn $ readHoldingRegisters (TransactionId 1) (ProtocolId 0) (UnitId 0) 1 3
       case result of
         Left err -> putStrLn $ show err
         Right registers -> do

@@ -21,3 +21,4 @@ executable experiment-modbus-tcp
                      , modbus-tcp
                      , transformers >= 0.5
                      , network
+                     , optparse-applicative
